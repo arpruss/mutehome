@@ -45,27 +45,22 @@ public class Monitoring extends Service {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         if (audioManager != null) {
+            int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
             if (!state) {
-                if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)==0)
+                if (currentVolume==0)
                     return;
-                savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                savedVolume = currentVolume;
                 options.edit().putInt("savedVolume", savedVolume).apply();
                 Log.v("MuteHome", "Saving "+savedVolume);
                 volumeLevel = 0;
             }
             else {
-                if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)==0) {
-                    Log.v("MuteHome", "Restoring "+savedVolume);
-                    volumeLevel = savedVolume;
-                }
-                else
+                if (currentVolume != 0)
                     return;
+                Log.v("MuteHome", "Restoring "+savedVolume);
+                volumeLevel = savedVolume;
             }
-
-
-
-            // volumeLevel is an integer.
-            // 0 is mute, and the max depends on the device (usually 15).
 
             audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC, // The Media stream
@@ -98,16 +93,15 @@ public class Monitoring extends Service {
         nb.setOngoing(true);
         Intent activityIntent = new Intent(this, mutehome.class);
         nb.setContentIntent(PendingIntent.getActivity(this, 0, activityIntent, PendingIntent.FLAG_IMMUTABLE));
-        nb.setContentText("Collecting barometer/altitude data");
-  //      nb.setSmallIcon(R.drawable.updown); // todo
-        nb.setContentTitle("Giant Barometer");
+        nb.setContentText("Monitoring app starts/stops");
+        nb.setSmallIcon(R.drawable.updown);
+        nb.setContentTitle("Mute Home");
         Notification notification = nb.build();
         if (notification == null) {
             Log.e("mutehome", "null notification");
             // don't know what to do or how it can happen
         }
         if (Build.VERSION.SDK_INT >= 29) {
-            Log.v("GiantBarometer", "service");
             startForeground(startId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);//0x40000000
         }
         else {
