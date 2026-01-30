@@ -29,14 +29,14 @@ public class Monitoring extends Service {
     private String lastPackageName = "";
     private NotificationChannel mChannel;
     private SharedPreferences options;
-    private boolean muted = false;
-    private int savedVolume = 10;
+    private int savedVolume = 8;
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
         options = PreferenceManager.getDefaultSharedPreferences(this);
+        savedVolume = options.getInt("savedVolume", 8);
     }
 
     private void setMedia(boolean state) {
@@ -46,15 +46,14 @@ public class Monitoring extends Service {
 
         if (audioManager != null) {
             if (!state) {
-                if (!muted) {
-                    savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                    Log.v("MuteHome", "Saving "+savedVolume);
-                }
-                muted = true;
+                if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)==0)
+                    return;
+                savedVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                options.edit().putInt("savedVolume", savedVolume).apply();
+                Log.v("MuteHome", "Saving "+savedVolume);
                 volumeLevel = 0;
             }
             else {
-                muted = false;
                 if (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)==0) {
                     Log.v("MuteHome", "Restoring "+savedVolume);
                     volumeLevel = savedVolume;
