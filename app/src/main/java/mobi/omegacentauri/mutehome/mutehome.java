@@ -41,7 +41,7 @@ public class mutehome extends Activity {
     private void needPermission() {
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setTitle("Mute Home");
-        b.setMessage("For this to work, you will need to run adb shell grant mobi.omegacentauri.mutehome android.permission.READ_LOGS.");
+        b.setMessage("For this to work, you will need to run adb shell grant mobi.omegacentauri.mutehome android.permission.READ_LOGS");
         b.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
