@@ -10,6 +10,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.TextView;
 
 public class mutehome extends Activity {
 
@@ -22,63 +26,58 @@ public class mutehome extends Activity {
 
         options = PreferenceManager.getDefaultSharedPreferences(this);
 
+        setContentView(R.layout.main);
+
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    public void onStart() {
+        super.onStart();
+        CheckBox cb = findViewById(R.id.checkBox);
         if (PackageManager.PERMISSION_GRANTED != checkSelfPermission(android.Manifest.permission.READ_LOGS)) {
-            needPermission();
+            ((TextView)findViewById(R.id.textView)).setText("For this to work, use your PC to run:\n"+
+                    "adb shell grant mobi.omegacentauri.mutehome android.permission.READ_LOGS");
+            cb.setEnabled(false);
         }
         else {
-            Intent serviceIntent = new Intent(this, Monitoring.class);
-            stopService(serviceIntent);
-            startForegroundService(serviceIntent);
-            havePermission();
+            ((TextView)findViewById(R.id.textView)).setText("Ready");
+            if (options.getBoolean("active", false)) {
+                activate();
+                cb.setChecked(true);
+            }
+            else {
+                deactivate();
+                cb.setChecked(false);
+            }
         }
-    }
-
-    private void needPermission() {
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setTitle("Mute Home");
-        b.setMessage("For this to work, you will need to run adb shell grant mobi.omegacentauri.mutehome android.permission.READ_LOGS");
-        b.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                finish();
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b)
+                    activate();
+                else
+                    deactivate();
+                options.edit().putBoolean("active", b).commit();
             }
         });
-        b.create().show();
     }
 
-    private void havePermission() {
-        AlertDialog.Builder b = new AlertDialog.Builder(this);
-        b.setTitle("Mute Home");
-        b.setMessage("Mute Home has been activated.");
-        b.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                finish();
-            }
-        });
-        b.create().show();
+    public void onStop() {
+
+        super.onStop();
+
+        CheckBox cb = findViewById(R.id.checkBox);
+        cb.setOnCheckedChangeListener(null);
     }
 
-    private void goToSettings() {
-        PackageManager pm = getPackageManager();
-        try {
-            Intent i = pm.getLaunchIntentForPackage(SETTINGS);
-            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
-            startActivity(i);
-        }
-        catch(Exception e) {
-            Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:" + SETTINGS));
-            i.setPackage(SETTINGS);
-            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
-            startActivity(i);
-        }
-        finish();
+    private void activate() {
+        Intent serviceIntent = new Intent(this, Monitoring.class);
+        stopService(serviceIntent);
+        startForegroundService(serviceIntent);
     }
 
+    private void deactivate() {
+        Intent serviceIntent = new Intent(this, Monitoring.class);
+        stopService(serviceIntent);
+    }
 }
